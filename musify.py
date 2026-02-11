@@ -60,7 +60,7 @@ class MusicLibrary:
 
 
 def main():
-    """Main function to run the music player."""
+    """Main function to run the music library manager."""
     library = MusicLibrary()
     
     print("🎵 Welcome to Musify - Free Music Library Manager 🎵")
@@ -93,7 +93,8 @@ def main():
             if not songs:
                 print("\nNo songs in library yet.")
             else:
-                print(f"\n📚 Your Music Library ({len(songs)} songs):")
+                count_text = "song" if len(songs) == 1 else "songs"
+                print(f"\n📚 Your Music Library ({len(songs)} {count_text}):")
                 for i, song in enumerate(songs):
                     album_info = f" - {song['album']}" if song['album'] else ""
                     duration_info = f" [{song['duration']}]" if song['duration'] else ""
@@ -116,7 +117,6 @@ def main():
             if not songs:
                 print("\nNo songs in library to remove.")
             else:
-                library.list_songs()
                 for i, song in enumerate(songs):
                     print(f"  {i+1}. {song['title']} by {song['artist']}")
                 

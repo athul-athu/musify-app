@@ -63,7 +63,7 @@ Duration (optional): 5:55
 
 Enter command: list
 
-📚 Your Music Library (1 songs):
+📚 Your Music Library (1 song):
   1. Bohemian Rhapsody by Queen - A Night at the Opera [5:55]
 ```
 
