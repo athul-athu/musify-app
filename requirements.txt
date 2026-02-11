@@ -1,0 +1,3 @@
+# Musify dependencies
+# Currently no external dependencies required
+# Python 3.6+ standard library is sufficient
