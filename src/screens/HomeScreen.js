@@ -27,6 +27,8 @@ const SONGS = [
     },
 ];
 
+import { LinearGradient } from 'expo-linear-gradient';
+
 export default function HomeScreen({ navigation }) {
     const renderItem = ({ item }) => (
         <TouchableOpacity
@@ -42,23 +44,30 @@ export default function HomeScreen({ navigation }) {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
-            <Text style={styles.headerTitle}>Musify</Text>
-            <FlatList
-                data={SONGS}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-            />
-        </SafeAreaView>
+        <LinearGradient
+            colors={[Colors.gradientStart, Colors.background]}
+            style={styles.container}
+        >
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
+                <Text style={styles.headerTitle}>Musify</Text>
+                <FlatList
+                    data={SONGS}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.listContent}
+                />
+            </SafeAreaView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
+    },
+    safeArea: {
+        flex: 1,
     },
     headerTitle: {
         fontSize: 28,

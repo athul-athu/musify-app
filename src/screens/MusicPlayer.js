@@ -1,158 +1,194 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import Colors from '../constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function MusicPlayer({ route, navigation }) {
     const { song } = route.params;
-    const [sound, setSound] = useState();
-    const [isPlaying, setIsPlaying] = useState(false);
+    const player = useAudioPlayer(song.url);
     const [loading, setLoading] = useState(true);
 
-    async function playSound() {
-        console.log('Loading Sound');
-        try {
-            const { sound } = await Audio.Sound.createAsync(
-                { uri: song.url },
-                { shouldPlay: true }
-            );
-            setSound(sound);
-            setIsPlaying(true);
-            setLoading(false);
-
-            sound.setOnPlaybackStatusUpdate((status) => {
-                if (status.didJustFinish) {
-                    setIsPlaying(false);
-                    // Optionally loop or go to next
-                }
-            });
-        } catch (error) {
-            console.error("Error loading sound", error);
-            setLoading(false);
-        }
-    }
-
     useEffect(() => {
-        playSound();
+        // Auto-play when component mounts
+        if (player) {
+            try {
+                player.play();
+                setLoading(false);
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                setLoading(false);
+            }
+        }
+
         return () => {
-            console.log('Unloading Sound');
-            if (sound) {
-                sound.unloadAsync();
+            // Cleanup when component unmounts
+            if (player) {
+                try {
+                    player.pause();
+                } catch (error) {
+                    console.error('Error pausing audio:', error);
+                }
             }
         };
-    }, [song]);
+    }, [song.url]);
 
-    async function togglePlayback() {
-        if (!sound) return;
-        if (isPlaying) {
-            await sound.pauseAsync();
-            setIsPlaying(false);
-        } else {
-            await sound.playAsync();
-            setIsPlaying(true);
+    const togglePlayback = () => {
+        if (!player) return;
+
+        try {
+            if (player.playing) {
+                player.pause();
+            } else {
+                player.play();
+            }
+        } catch (error) {
+            console.error('Error toggling playback:', error);
         }
-    }
+    };
+
+    const handleSeek = (value) => {
+        if (player) {
+            player.seekTo(value);
+        }
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="chevron-down" size={30} color={Colors.text} />
+        <LinearGradient
+            colors={[Colors.gradientStart, Colors.background]}
+            style={styles.container}
+        >
+            <SafeAreaView style={styles.safeArea}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Ionicons name="chevron-down" size={32} color={Colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerText}>Now Playing</Text>
-                <View style={{ width: 30 }} />
-            </View>
 
-            <View style={styles.artworkContainer}>
-                <Image source={{ uri: song.artwork }} style={styles.artwork} />
-            </View>
+                <View style={styles.artworkContainer}>
+                    <Image source={{ uri: song.artwork }} style={styles.artwork} />
+                </View>
 
-            <View style={styles.infoContainer}>
-                <Text style={styles.title}>{song.title}</Text>
-                <Text style={styles.artist}>{song.artist}</Text>
-            </View>
+                <View style={styles.infoContainer}>
+                    <Text style={styles.title}>{song.title}</Text>
+                    <Text style={styles.artist}>{song.artist}</Text>
+                </View>
 
-            <View style={styles.controls}>
-                {loading ? (
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                ) : (
-                    <TouchableOpacity onPress={togglePlayback} style={styles.playButton}>
-                        <Ionicons name={isPlaying ? "pause" : "play"} size={40} color={Colors.black} />
+                <View style={styles.progressContainer}>
+                    <Slider
+                        style={styles.slider}
+                        minimumValue={0}
+                        maximumValue={player.duration || 100}
+                        value={player.currentTime || 0}
+                        onSlidingComplete={handleSeek}
+                        minimumTrackTintColor={Colors.primary}
+                        maximumTrackTintColor={Colors.textSecondary}
+                        thumbTintColor={Colors.primary}
+                    />
+                    <View style={styles.timeContainer}>
+                        <Text style={styles.timeText}>
+                            {formatTime(player.currentTime || 0)}
+                        </Text>
+                        <Text style={styles.timeText}>
+                            {formatTime(player.duration || 0)}
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={styles.controls}>
+                    <TouchableOpacity>
+                        <Ionicons name="play-skip-back" size={40} color={Colors.text} />
                     </TouchableOpacity>
-                )}
-            </View>
-        </SafeAreaView>
+
+                    {loading ? (
+                        <ActivityIndicator size="large" color={Colors.primary} />
+                    ) : (
+                        <TouchableOpacity onPress={togglePlayback} style={styles.playButton}>
+                            <Ionicons
+                                name={player.playing ? "pause-circle" : "play-circle"}
+                                size={80}
+                                color={Colors.primary}
+                            />
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity>
+                        <Ionicons name="play-skip-forward" size={40} color={Colors.text} />
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </LinearGradient>
     );
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
-        justifyContent: 'space-between',
-        paddingBottom: 40,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    safeArea: {
+        flex: 1,
         paddingHorizontal: 20,
-        paddingTop: 10,
     },
-    headerText: {
-        color: Colors.text,
-        fontSize: 16,
-        fontWeight: '600',
+    backButton: {
+        alignSelf: 'flex-start',
+        marginTop: 10,
     },
     artworkContainer: {
         alignItems: 'center',
-        justifyContent: 'center',
-        marginVertical: 30,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 8,
-        },
-        shadowOpacity: 0.44,
-        shadowRadius: 10.32,
-        elevation: 16,
+        marginTop: 40,
+        marginBottom: 40,
     },
     artwork: {
         width: 300,
         height: 300,
-        borderRadius: 8,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: Colors.primary,
     },
     infoContainer: {
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 40,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         color: Colors.text,
-        textAlign: 'center',
-        marginBottom: 5,
+        marginBottom: 8,
     },
     artist: {
         fontSize: 18,
         color: Colors.textSecondary,
-        textAlign: 'center',
+    },
+    progressContainer: {
+        marginBottom: 30,
+    },
+    slider: {
+        width: '100%',
+        height: 40,
+    },
+    timeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
+    },
+    timeText: {
+        color: Colors.textSecondary,
+        fontSize: 12,
     },
     controls: {
         flexDirection: 'row',
+        justifyContent: 'space-around',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 40,
+        paddingHorizontal: 40,
     },
     playButton: {
-        width: 70,
-        height: 70,
-        backgroundColor: Colors.primary,
-        borderRadius: 35,
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginHorizontal: 20,
     },
 });
