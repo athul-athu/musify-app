@@ -6,24 +6,24 @@ import Colors from '../constants/Colors';
 const SONGS = [
     {
         id: '1',
+        videoId: 'dzqCNWj51wE', // Lose Control
         title: 'Lose Control',
         artist: 'Teddy Swims',
         artwork: 'https://i1.sndcdn.com/artworks-9x50R7L3tK6t-0-t500x500.jpg',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Dummy URL
     },
     {
         id: '2',
+        videoId: 'Oa_RSwwpPaA', // Beautiful Things
         title: 'Beautiful Things',
         artist: 'Benson Boone',
         artwork: 'https://i1.sndcdn.com/artworks-Zq70pP8tT3zT-0-t500x500.jpg',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     },
     {
         id: '3',
+        videoId: 'ic8j13piAhQ', // Cruel Summer
         title: 'Cruel Summer',
         artist: 'Taylor Swift',
         artwork: 'https://upload.wikimedia.org/wikipedia/en/e/e8/Taylor_Swift_-_Cruel_Summer.png',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
     },
 ];
 

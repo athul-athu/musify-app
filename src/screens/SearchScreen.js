@@ -36,12 +36,14 @@ export default function SearchScreen({ navigation }) {
                 return;
             }
 
-            const results = data.items.map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                author: item.snippet.channelTitle,
-                thumbnail: item.snippet.thumbnails.medium.url,
-            }));
+            const results = data.items
+                .filter(item => item.id?.videoId) // Filter out items without videoId
+                .map(item => ({
+                    id: item.id.videoId,
+                    title: item.snippet.title,
+                    author: item.snippet.channelTitle,
+                    thumbnail: item.snippet.thumbnails.medium.url,
+                }));
 
             setSearchResults(results);
         } catch (error) {
@@ -62,16 +64,15 @@ export default function SearchScreen({ navigation }) {
     };
 
     const handlePlayPreview = (videoId) => {
-        // Note: YouTube doesn't provide direct audio URLs via API
-        // You'll need a backend service or use youtube-dl equivalent
-        // For now, we'll navigate to the player with YouTube video ID
+        const songData = searchResults.find(r => r.id === videoId);
+
         navigation.navigate('Player', {
             song: {
                 id: videoId,
-                title: searchResults.find(r => r.id === videoId)?.title,
-                artist: searchResults.find(r => r.id === videoId)?.author,
-                artwork: searchResults.find(r => r.id === videoId)?.thumbnail,
-                url: `https://www.youtube.com/watch?v=${videoId}`, // This is a placeholder
+                videoId: videoId,
+                title: songData?.title,
+                artist: songData?.author,
+                artwork: songData?.thumbnail,
             }
         });
     };
@@ -133,7 +134,7 @@ export default function SearchScreen({ navigation }) {
                     <FlatList
                         data={searchResults}
                         renderItem={renderSearchResult}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item, index) => item.id || index.toString()}
                         contentContainerStyle={styles.resultsList}
                         showsVerticalScrollIndicator={false}
                     />
