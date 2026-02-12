@@ -5,6 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlayer } from '../context/PlayerContext';
+import { useAuth } from '../context/AuthContext';
+import { saveRecentSearches } from '../services/searchService';
 
 // YouTube Data API v3 Configuration
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
@@ -14,6 +16,7 @@ import AddToPlaylistModal from '../components/AddToPlaylistModal';
 
 export default function SearchScreen({ navigation }) {
     const { playSong } = usePlayer();
+    const { session } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -31,6 +34,12 @@ export default function SearchScreen({ navigation }) {
             const response = await fetch(
                 `${YOUTUBE_API_URL}?part=snippet&q=${encodeURIComponent(query + ' music')}&type=video&videoCategoryId=10&maxResults=20&key=${YOUTUBE_API_KEY}`
             );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`YouTube API Error (${response.status}):`, errorText);
+                throw new Error(`API returned ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -52,6 +61,11 @@ export default function SearchScreen({ navigation }) {
                 }));
 
             setSearchResults(results);
+
+            // Save recent search if user is logged in
+            if (session?.user?.id && results.length > 0) {
+                saveRecentSearches(session.user.id, query, results);
+            }
         } catch (error) {
             console.error('YouTube search error:', error);
             Alert.alert('Error', 'Failed to search YouTube. Please try again.');

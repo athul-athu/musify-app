@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     },
     playlistButton: {
         position: 'absolute',
-        bottom: 255,
+        bottom: 225,
         right: 35,
     },
 });

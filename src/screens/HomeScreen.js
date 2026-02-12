@@ -1,53 +1,53 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '../constants/Colors';
-
-const SONGS = [
-    {
-        id: '1',
-        videoId: 'dzqCNWj51wE', // Lose Control
-        title: 'Lose Control',
-        artist: 'Teddy Swims',
-        artwork: 'https://i1.sndcdn.com/artworks-9x50R7L3tK6t-0-t500x500.jpg',
-        thumbnail: 'https://i1.sndcdn.com/artworks-9x50R7L3tK6t-0-t500x500.jpg',
-    },
-    {
-        id: '2',
-        videoId: 'Oa_RSwwpPaA', // Beautiful Things
-        title: 'Beautiful Things',
-        artist: 'Benson Boone',
-        artwork: 'https://i1.sndcdn.com/artworks-Zq70pP8tT3zT-0-t500x500.jpg',
-        thumbnail: 'https://i1.sndcdn.com/artworks-Zq70pP8tT3zT-0-t500x500.jpg',
-    },
-    {
-        id: '3',
-        videoId: 'ic8j13piAhQ', // Cruel Summer
-        title: 'Cruel Summer',
-        artist: 'Taylor Swift',
-        artwork: 'https://upload.wikimedia.org/wikipedia/en/e/e8/Taylor_Swift_-_Cruel_Summer.png',
-        thumbnail: 'https://upload.wikimedia.org/wikipedia/en/e/e8/Taylor_Swift_-_Cruel_Summer.png',
-    },
-];
-
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
+import { getRecentSearches } from '../services/searchService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePlayer } from '../context/PlayerContext';
 
 export default function HomeScreen({ navigation }) {
     const { playSong } = usePlayer();
+    const { session } = useAuth();
+    const [songs, setSongs] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchRecentSongs();
+        }, [session])
+    );
+
+    const fetchRecentSongs = async () => {
+        if (!session?.user?.id) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const recent = await getRecentSearches(session.user.id);
+            setSongs(recent);
+        } catch (error) {
+            console.error('Error fetching recent songs:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.itemContainer}
             onPress={() => {
-                playSong(item, SONGS, SONGS.indexOf(item));
+                playSong(item, songs, songs.indexOf(item));
                 navigation.navigate('Player');
             }}
         >
             <Image source={{ uri: item.artwork }} style={styles.artwork} />
             <View style={styles.infoContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.artist}>{item.artist}</Text>
+                <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.artist}>{item.artist || 'Unknown Artist'}</Text>
             </View>
         </TouchableOpacity>
     );
@@ -59,13 +59,26 @@ export default function HomeScreen({ navigation }) {
         >
             <SafeAreaView style={styles.safeArea}>
                 <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
-                <Text style={styles.headerTitle}>Musify</Text>
-                <FlatList
-                    data={SONGS}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
-                />
+                <Text style={styles.headerTitle}>Recent Search</Text>
+
+                {loading ? (
+                    <View style={styles.centerContainer}>
+                        <ActivityIndicator size="large" color={Colors.primary} />
+                    </View>
+                ) : songs.length > 0 ? (
+                    <FlatList
+                        data={songs}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
+                    />
+                ) : (
+                    <View style={styles.centerContainer}>
+                        <Text style={styles.emptyText}>No recent searches found</Text>
+                        <Text style={styles.emptySubtext}>Try searching for some music first!</Text>
+                    </View>
+                )}
             </SafeAreaView>
         </LinearGradient>
     );
@@ -89,6 +102,24 @@ const styles = StyleSheet.create({
     listContent: {
         paddingHorizontal: 20,
         paddingBottom: 20,
+    },
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.text,
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        fontSize: 14,
+        color: Colors.textSecondary,
+        textAlign: 'center',
+        marginTop: 8,
     },
     itemContainer: {
         flexDirection: 'row',
