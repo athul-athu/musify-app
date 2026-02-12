@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer } from 'expo-audio';
+import { usePlayer } from '../context/PlayerContext';
 
 // YouTube Data API v3 Configuration
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
@@ -13,6 +13,7 @@ const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/search';
 import AddToPlaylistModal from '../components/AddToPlaylistModal';
 
 export default function SearchScreen({ navigation }) {
+    const { playSong } = usePlayer();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -43,8 +44,10 @@ export default function SearchScreen({ navigation }) {
                 .filter(item => item.id?.videoId) // Filter out items without videoId
                 .map(item => ({
                     id: item.id.videoId,
+                    videoId: item.id.videoId,
                     title: item.snippet.title,
-                    author: item.snippet.channelTitle,
+                    artist: item.snippet.channelTitle,
+                    artwork: item.snippet.thumbnails.medium.url,
                     thumbnail: item.snippet.thumbnails.medium.url,
                 }));
 
@@ -68,16 +71,10 @@ export default function SearchScreen({ navigation }) {
 
     const handlePlayPreview = (videoId) => {
         const songData = searchResults.find(r => r.id === videoId);
-
-        navigation.navigate('Player', {
-            song: {
-                id: videoId,
-                videoId: videoId,
-                title: songData?.title,
-                artist: songData?.author,
-                artwork: songData?.thumbnail,
-            }
-        });
+        if (songData) {
+            playSong(songData, searchResults, searchResults.indexOf(songData));
+            navigation.navigate('Player');
+        }
     };
 
     const renderSearchResult = ({ item }) => (

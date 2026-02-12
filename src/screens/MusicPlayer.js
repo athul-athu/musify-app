@@ -1,167 +1,49 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import YoutubePlayer from 'react-native-youtube-iframe';
 import Slider from '@react-native-community/slider';
+import { usePlayer } from '../context/PlayerContext';
+import AddToPlaylistModal from '../components/AddToPlaylistModal';
 
 const { width } = Dimensions.get('window');
 
-import AddToPlaylistModal from '../components/AddToPlaylistModal';
+export default function MusicPlayer({ navigation }) {
+    const {
+        currentSong,
+        playing,
+        togglePlay,
+        playNext,
+        playPrevious,
+        currentTime,
+        duration,
+        seekTo,
+        loading,
+        currentIndex,
+        playlist
+    } = usePlayer();
 
-export default function MusicPlayer({ route, navigation }) {
-    const { song, playlist, startIndex } = route.params;
-    const playerRef = useRef(null);
-    const [playing, setPlaying] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [isSeeking, setIsSeeking] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [isSeeking, setIsSeeking] = useState(false);
+    const [seekValue, setSeekValue] = useState(0);
 
-    // Queue state
-    const [currentIndex, setCurrentIndex] = useState(startIndex !== undefined ? startIndex : 0);
-    const [currentSong, setCurrentSong] = useState(song);
-
-    useEffect(() => {
-        if (playlist && startIndex !== undefined) {
-            setCurrentSong(playlist[currentIndex]);
-        }
-    }, [currentIndex, playlist]);
-
-    // Reset state when song changes
-    useEffect(() => {
-        setLoading(true);
-        setCurrentTime(0);
-        setDuration(0);
-        setPlaying(true);
-    }, [videoId]); // Use videoId as the trigger for reset
-
-    const playNext = useCallback(() => {
-        if (playlist && playlist.length > 0) {
-            console.log("Advancing to next song...");
-            setCurrentTime(0);
-            setDuration(0);
-            if (currentIndex < playlist.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-            } else {
-                console.log("Looping back to start of playlist");
-                setCurrentIndex(0);
-            }
-        }
-    }, [currentIndex, playlist]);
-
-    // NEW: Explicitly control playback via Ref methods for maximal reliability
-    useEffect(() => {
-        if (playerRef.current) {
-            if (playing) {
-                console.log("Forcing Play via Ref...");
-                playerRef.current.playVideo?.();
-            } else {
-                console.log("Forcing Pause via Ref...");
-                playerRef.current.pauseVideo?.();
-            }
-        }
-    }, [playing]);
-
-    const playPrevious = useCallback(() => {
-        if (playlist && playlist.length > 0) {
-            setCurrentTime(0);
-            setDuration(0);
-            if (currentIndex > 0) {
-                setCurrentIndex(prev => prev - 1);
-            } else {
-                console.log("Looping back to end of playlist");
-                setCurrentIndex(playlist.length - 1);
-            }
-        }
-    }, [currentIndex, playlist]);
-
-    const onStateChange = useCallback((state) => {
-        console.log("YouTube State:", state);
-        if (state === 'ended') {
-            if (playlist) {
-                playNext();
-            } else {
-                setPlaying(false);
-                setCurrentTime(0);
-            }
-        } else if (state === 'buffering') {
-            setLoading(true);
-        } else if (state === 'playing') {
-            setLoading(false);
-            setPlaying(true); // Sync internal state back to external
-        } else if (state === 'paused') {
-            // Only set playing false if we are not in a loading/seeking state
-            // to prevent flickering on start
-            if (!loading) setPlaying(false);
-        }
-    }, [currentIndex, playlist, playNext, loading]);
-
-    const togglePlayback = useCallback(() => {
-        setPlaying(prev => !prev);
-    }, []);
-
-    const onReady = useCallback(async () => {
-        console.log("Player Ready for:", videoId);
-        setLoading(false);
-
-        if (playerRef.current) {
-            try {
-                // If this is a fresh song (time is near 0), kickstart it forcefully
-                if (currentTime < 1) {
-                    console.log("Forceful kickstart at 0...");
-                    playerRef.current.seekTo(0, true);
-                }
-                const d = await playerRef.current.getDuration();
-                if (d) setDuration(d);
-            } catch (e) {
-                console.log("Ready Error:", e);
-            }
-        }
-    }, [videoId, currentTime]);
-
-    // Poll for current time
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            if (playing && !loading && !isSeeking && playerRef.current) {
-                try {
-                    const time = await playerRef.current.getCurrentTime();
-                    const dur = await playerRef.current.getDuration();
-                    if (time !== undefined) {
-                        setCurrentTime(time);
-                    }
-                    if (dur) setDuration(dur);
-                } catch (e) {
-                    // Ignore errors
-                }
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [playing, loading, isSeeking]);
-
-    const handleSeek = useCallback((value) => {
-        setCurrentTime(value);
-    }, []);
-
-    const handleSlidingStart = useCallback(() => {
-        setIsSeeking(true);
-    }, []);
-
-    const handleSlidingComplete = useCallback((value) => {
-        if (playerRef.current) {
-            playerRef.current.seekTo(value, true);
-            setPlaying(true);
-        }
-        setIsSeeking(false);
-    }, []);
-
-    // Helper to get video ID and artwork regardless of source object structure
     if (!currentSong) return null;
 
-    const videoId = currentSong.videoId || currentSong.video_id || currentSong.id;
+    const handleSeek = (value) => {
+        setSeekValue(value);
+    };
+
+    const handleSlidingStart = () => {
+        setIsSeeking(true);
+    };
+
+    const handleSlidingComplete = (value) => {
+        seekTo(value);
+        setIsSeeking(false);
+    };
+
     const artwork = currentSong.artwork || currentSong.thumbnail;
 
     return (
@@ -176,45 +58,22 @@ export default function MusicPlayer({ route, navigation }) {
 
                 <View style={styles.artworkContainer}>
                     <Image source={{ uri: artwork }} style={styles.artwork} />
-                    <View style={styles.visibleHiddenPlayer}>
-                        <YoutubePlayer
-                            key={videoId} // Reset player instance ONLY when song changes
-                            ref={playerRef}
-                            height={100}
-                            width={100}
-                            play={playing}
-                            videoId={videoId}
-                            onChangeState={onStateChange}
-                            onReady={onReady}
-                            onError={(e) => console.log('Player Error:', e)}
-                            contentScale={0.5}
-                            webViewProps={{
-                                allowsInlineMediaPlayback: true,
-                                mediaPlaybackRequiresUserAction: false,
-                                androidLayerType: 'hardware',
-                                opacity: 0.99,
-                                allowsBackgroundMediaPlayback: true,
-                            }}
-                            initialPlayerParams={{
-                                preventFullScreen: true,
-                                modestbranding: true,
-                                controls: false,
-                                rel: 0,
-                                start: Math.floor(currentTime),
-                            }}
-                        />
-                    </View>
+                    {loading && (
+                        <View style={styles.loadingOverlay}>
+                            <ActivityIndicator size="large" color={Colors.primary} />
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.title} numberOfLines={2}>{currentSong.title}</Text>
-                    <Text style={styles.artist}>{currentSong.artist}</Text>
+                    <Text style={styles.artist}>{currentSong.artist || 'Unknown Artist'}</Text>
                 </View>
 
                 <View style={styles.progressContainer}>
                     <Slider
                         style={styles.slider}
-                        value={currentTime}
+                        value={isSeeking ? seekValue : currentTime}
                         minimumValue={0}
                         maximumValue={duration > 0 ? duration : 1}
                         minimumTrackTintColor={Colors.primary}
@@ -226,7 +85,7 @@ export default function MusicPlayer({ route, navigation }) {
                     />
                     <View style={styles.timeContainer}>
                         <Text style={styles.timeText}>
-                            {formatTime(currentTime)}
+                            {formatTime(isSeeking ? seekValue : currentTime)}
                         </Text>
                         <Text style={styles.timeText}>
                             {formatTime(duration)}
@@ -235,13 +94,18 @@ export default function MusicPlayer({ route, navigation }) {
                 </View>
 
                 <View style={styles.controls}>
-                    {playlist ? (
-                        <TouchableOpacity onPress={playPrevious} disabled={currentIndex === 0}>
-                            <Ionicons name="play-skip-back" size={35} color={currentIndex === 0 ? Colors.textSecondary : Colors.text} />
-                        </TouchableOpacity>
-                    ) : null}
+                    <TouchableOpacity
+                        onPress={playPrevious}
+                        disabled={!playlist || currentIndex === 0}
+                    >
+                        <Ionicons
+                            name="play-skip-back"
+                            size={35}
+                            color={(!playlist || currentIndex === 0) ? Colors.textSecondary : Colors.text}
+                        />
+                    </TouchableOpacity>
 
-                    <TouchableOpacity onPress={togglePlayback} style={styles.playButton}>
+                    <TouchableOpacity onPress={togglePlay} style={styles.playButton}>
                         <Ionicons
                             name={playing ? "pause-circle" : "play-circle"}
                             size={80}
@@ -249,24 +113,30 @@ export default function MusicPlayer({ route, navigation }) {
                         />
                     </TouchableOpacity>
 
-                    {playlist ? (
-                        <TouchableOpacity onPress={playNext} disabled={currentIndex === playlist.length - 1}>
-                            <Ionicons name="play-skip-forward" size={35} color={currentIndex === playlist.length - 1 ? Colors.textSecondary : Colors.text} />
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.playlistButton}>
-                            <Ionicons name="add-circle-outline" size={35} color={Colors.textSecondary} />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        onPress={playNext}
+                        disabled={!playlist || currentIndex === playlist.length - 1}
+                    >
+                        <Ionicons
+                            name="play-skip-forward"
+                            size={35}
+                            color={(!playlist || currentIndex === playlist.length - 1) ? Colors.textSecondary : Colors.text}
+                        />
+                    </TouchableOpacity>
                 </View>
 
-                {!playlist && (
-                    <AddToPlaylistModal
-                        visible={modalVisible}
-                        onClose={() => setModalVisible(false)}
-                        song={currentSong}
-                    />
-                )}
+                <TouchableOpacity
+                    onPress={() => setModalVisible(true)}
+                    style={styles.playlistButton}
+                >
+                    <Ionicons name="add-circle-outline" size={35} color={Colors.textSecondary} />
+                </TouchableOpacity>
+
+                <AddToPlaylistModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    song={currentSong}
+                />
             </SafeAreaView>
         </LinearGradient>
     );
@@ -305,14 +175,12 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: Colors.primary,
     },
-    visibleHiddenPlayer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        height: 100,
-        width: 100,
-        zIndex: -1,
-        opacity: 0.01,
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     infoContainer: {
         alignItems: 'center',
@@ -357,5 +225,10 @@ const styles = StyleSheet.create({
     },
     playButton: {
         marginHorizontal: 20,
+    },
+    playlistButton: {
+        position: 'absolute',
+        bottom: 255,
+        right: 35,
     },
 });

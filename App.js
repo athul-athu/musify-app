@@ -2,19 +2,19 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
+import { PlayerProvider } from './src/context/PlayerContext';
 
 export default function App() {
   useEffect(() => {
     async function setupAudio() {
       try {
-        await Audio.setAudioModeAsync({
+        await setAudioModeAsync({
           staysActiveInBackground: true,
-          allowsRecordingIOS: false,
-          interruptionModeIOS: 1, // InterruptionModeIOS.DoNotMix
+          interruptionModeIOS: 'doNotMix',
           playsInSilentModeIOS: true,
-          shouldRouteAudioToBluetoothApiAD: true,
-          interruptionModeAndroid: 1, // InterruptionModeAndroid.DoNotMix
+          shouldRouteAudioToBluetoothApi: true,
+          interruptionModeAndroid: 'doNotMix',
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
         });
@@ -27,7 +27,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AppNavigator />
+      <PlayerProvider>
+        <AppNavigator />
+      </PlayerProvider>
       <StatusBar style="light" />
     </SafeAreaProvider>
   );

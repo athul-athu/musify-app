@@ -5,9 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { getPlaylistSongs, removeSongFromPlaylist } from '../services/playlistService';
+import { usePlayer } from '../context/PlayerContext';
 
 export default function PlaylistDetailScreen({ route, navigation }) {
     const { playlist } = route.params;
+    const { playSong } = usePlayer();
     const [songs, setSongs] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -18,7 +20,13 @@ export default function PlaylistDetailScreen({ route, navigation }) {
     const fetchSongs = async () => {
         try {
             const data = await getPlaylistSongs(playlist.id);
-            setSongs(data);
+            // Ensure data is mapped for player
+            const mappedSongs = data.map(s => ({
+                ...s,
+                videoId: s.videoId || s.video_id,
+                artwork: s.artwork || s.thumbnail
+            }));
+            setSongs(mappedSongs);
         } catch (error) {
             Alert.alert('Error', 'Failed to load songs');
         } finally {
@@ -27,11 +35,8 @@ export default function PlaylistDetailScreen({ route, navigation }) {
     };
 
     const handlePlaySong = (index) => {
-        navigation.navigate('Player', {
-            song: songs[index],
-            playlist: songs,
-            startIndex: index
-        });
+        playSong(songs[index], songs, index);
+        navigation.navigate('Player');
     };
 
     const confirmRemoveSong = (songId) => {

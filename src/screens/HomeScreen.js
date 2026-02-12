@@ -31,12 +31,18 @@ const SONGS = [
 ];
 
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePlayer } from '../context/PlayerContext';
 
 export default function HomeScreen({ navigation }) {
+    const { playSong } = usePlayer();
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.itemContainer}
-            onPress={() => navigation.navigate('Player', { song: item })}
+            onPress={() => {
+                playSong(item, SONGS, SONGS.indexOf(item));
+                navigation.navigate('Player');
+            }}
         >
             <Image source={{ uri: item.artwork }} style={styles.artwork} />
             <View style={styles.infoContainer}>
