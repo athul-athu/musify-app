@@ -10,6 +10,7 @@ const SONGS = [
         title: 'Lose Control',
         artist: 'Teddy Swims',
         artwork: 'https://i1.sndcdn.com/artworks-9x50R7L3tK6t-0-t500x500.jpg',
+        thumbnail: 'https://i1.sndcdn.com/artworks-9x50R7L3tK6t-0-t500x500.jpg',
     },
     {
         id: '2',
@@ -17,6 +18,7 @@ const SONGS = [
         title: 'Beautiful Things',
         artist: 'Benson Boone',
         artwork: 'https://i1.sndcdn.com/artworks-Zq70pP8tT3zT-0-t500x500.jpg',
+        thumbnail: 'https://i1.sndcdn.com/artworks-Zq70pP8tT3zT-0-t500x500.jpg',
     },
     {
         id: '3',
@@ -24,6 +26,7 @@ const SONGS = [
         title: 'Cruel Summer',
         artist: 'Taylor Swift',
         artwork: 'https://upload.wikimedia.org/wikipedia/en/e/e8/Taylor_Swift_-_Cruel_Summer.png',
+        thumbnail: 'https://upload.wikimedia.org/wikipedia/en/e/e8/Taylor_Swift_-_Cruel_Summer.png',
     },
 ];
 

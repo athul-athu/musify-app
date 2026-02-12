@@ -13,6 +13,7 @@ import UserDetailsScreen from '../screens/UserDetailsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import PlaylistDetailScreen from '../screens/PlaylistDetailScreen';
 
 import Colors from '../constants/Colors';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -81,6 +82,7 @@ function MainNavigator() {
                     <>
                         <Stack.Screen name="Main" component={BottomTabs} />
                         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+                        <Stack.Screen name="PlaylistDetail" component={PlaylistDetailScreen} options={{ title: 'Playlist Details' }} />
                         <Stack.Screen name="Player" component={MusicPlayer} options={{ presentation: 'modal' }} />
                     </>
                 )}

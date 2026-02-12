@@ -10,11 +10,14 @@ import { useAudioPlayer } from 'expo-audio';
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/search';
 
+import AddToPlaylistModal from '../components/AddToPlaylistModal';
+
 export default function SearchScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [currentPlayingId, setCurrentPlayingId] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedSong, setSelectedSong] = useState(null);
 
     const searchYouTube = async (query) => {
         if (!query.trim()) {
@@ -91,6 +94,12 @@ export default function SearchScreen({ navigation }) {
                     {item.author}
                 </Text>
             </View>
+            <TouchableOpacity onPress={() => {
+                setSelectedSong(item);
+                setModalVisible(true);
+            }} style={{ marginRight: 10 }}>
+                <Ionicons name="add-circle-outline" size={32} color={Colors.textSecondary} />
+            </TouchableOpacity>
             <Ionicons name="play-circle" size={32} color={Colors.primary} />
         </TouchableOpacity>
     );
@@ -151,6 +160,12 @@ export default function SearchScreen({ navigation }) {
                         <Text style={styles.emptySubtext}>Find your favorite songs and artists</Text>
                     </View>
                 )}
+
+                <AddToPlaylistModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    song={selectedSong}
+                />
             </SafeAreaView>
         </LinearGradient>
     );
