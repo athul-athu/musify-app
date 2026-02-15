@@ -37,7 +37,7 @@ const MiniPlayer = () => {
                     />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={playNext} style={styles.controlButton}>
-                    <Ionicons name="play-forward" size={24} color={Colors.text} />
+                    <Ionicons name="play-forward" size={28} color={Colors.text} />
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

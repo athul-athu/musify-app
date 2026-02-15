@@ -6,6 +6,8 @@ const PlayerContext = createContext();
 
 export const PlayerProvider = ({ children }) => {
     const playerRef = useRef(null);
+    const resumePositionRef = useRef(0); // Track position for resume after pause
+
     const [currentSong, setCurrentSong] = useState(null);
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,11 +32,15 @@ export const PlayerProvider = ({ children }) => {
     const playNext = useCallback(() => {
         if (playlist && playlist.length > 0) {
             setCurrentTime(0);
+            resumePositionRef.current = 0; // Clear resume position for new song
+            setPlaying(true); // Ensure next song plays
+
             if (currentIndex < playlist.length - 1) {
                 const nextIndex = currentIndex + 1;
                 setCurrentIndex(nextIndex);
                 setCurrentSong(playlist[nextIndex]);
             } else {
+                // Loop back to start
                 setCurrentIndex(0);
                 setCurrentSong(playlist[0]);
             }
@@ -44,21 +50,21 @@ export const PlayerProvider = ({ children }) => {
     const playPrevious = useCallback(() => {
         if (playlist && playlist.length > 0) {
             setCurrentTime(0);
+            resumePositionRef.current = 0; // Clear resume position for new song
+            setPlaying(true); // Ensure previous song plays
+
             if (currentIndex > 0) {
                 const prevIndex = currentIndex - 1;
                 setCurrentIndex(prevIndex);
                 setCurrentSong(playlist[prevIndex]);
             } else {
+                // Loop to end
                 const lastIndex = playlist.length - 1;
                 setCurrentIndex(lastIndex);
                 setCurrentSong(playlist[lastIndex]);
             }
         }
     }, [currentIndex, playlist]);
-
-    const togglePlay = useCallback(() => {
-        setPlaying(prev => !prev);
-    }, []);
 
     const seekTo = useCallback((seconds) => {
         if (playerRef.current) {
@@ -89,28 +95,34 @@ export const PlayerProvider = ({ children }) => {
         setLoading(false);
         if (playerRef.current) {
             try {
-                // Force kickstart if time is near 0
-                if (currentTime < 1) {
-                    playerRef.current.seekTo(0, true);
+                // If we have a saved resume position, seek to it
+                if (resumePositionRef.current > 0) {
+                    console.log('Resuming to position:', resumePositionRef.current);
+                    await playerRef.current.seekTo(resumePositionRef.current, true);
+                    resumePositionRef.current = 0; // Clear after use
+                } else {
+                    // For new songs, seek to 0 to kickstart playback
+                    console.log('Starting new song from beginning');
+                    await playerRef.current.seekTo(0, true);
                 }
+
                 const d = await playerRef.current.getDuration();
                 if (d) setDuration(d);
             } catch (e) {
                 console.log("Global Player Ready Error:", e);
             }
         }
-    }, [currentTime]);
+    }, []);
 
-    // Force commands via Ref when state changes
-    useEffect(() => {
-        if (playerRef.current) {
-            if (playing) {
-                playerRef.current.playVideo?.();
-            } else {
-                playerRef.current.pauseVideo?.();
-            }
+    // When pausing, save the position for resume
+    const togglePlay = useCallback(() => {
+        if (playing) {
+            // Pausing - save current position
+            resumePositionRef.current = currentTime;
+            console.log('Pausing at:', currentTime);
         }
-    }, [playing]);
+        setPlaying(prev => !prev);
+    }, [playing, currentTime]);
 
     // Polling for time
     useEffect(() => {
@@ -151,15 +163,15 @@ export const PlayerProvider = ({ children }) => {
             }}
         >
             {children}
-            {/* Global Hidden Player */}
-            {currentSong && (
+            {/* Global Hidden Player - Only render when playing */}
+            {currentSong && playing && (
                 <View style={styles.hiddenContainer}>
                     <YoutubePlayer
                         key={videoId}
                         ref={playerRef}
                         height={100}
                         width={100}
-                        play={playing}
+                        play={true}
                         videoId={videoId}
                         onChangeState={onStateChange}
                         onReady={onReady}

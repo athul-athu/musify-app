@@ -100,7 +100,7 @@ export default function MusicPlayer({ navigation }) {
                     >
                         <Ionicons
                             name="play-skip-back"
-                            size={35}
+                            size={40}
                             color={(!playlist || currentIndex === 0) ? Colors.textSecondary : Colors.text}
                         />
                     </TouchableOpacity>
@@ -119,7 +119,7 @@ export default function MusicPlayer({ navigation }) {
                     >
                         <Ionicons
                             name="play-skip-forward"
-                            size={35}
+                            size={40}
                             color={(!playlist || currentIndex === playlist.length - 1) ? Colors.textSecondary : Colors.text}
                         />
                     </TouchableOpacity>
@@ -222,9 +222,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
+        gap: 20,
     },
     playButton: {
-        marginHorizontal: 20,
+        marginHorizontal: 10,
     },
     playlistButton: {
         position: 'absolute',
