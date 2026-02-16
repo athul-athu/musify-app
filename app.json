@@ -4,7 +4,7 @@
     "slug": "musify",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.jpeg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -35,9 +35,14 @@
       "permissions": [
         "WAKE_LOCK",
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE"
       ],
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "foregroundService": {
+        "enabled": true,
+        "description": "Playing music in the background"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

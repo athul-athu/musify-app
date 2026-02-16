@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useRef, useCallback, useEffect } from 'react';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { View, StyleSheet } from 'react-native';
+import { Audio } from 'expo-av';
 
 const PlayerContext = createContext();
 
@@ -15,6 +16,23 @@ export const PlayerProvider = ({ children }) => {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [loading, setLoading] = useState(false);
+
+    // Configure audio mode for background playback
+    useEffect(() => {
+        const configureAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    staysActiveInBackground: true,
+                    playsInSilentModeIOS: true,
+                    shouldDuckAndroid: true,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (e) {
+                // Silent error
+            }
+        };
+        configureAudio();
+    }, []);
 
     const playSong = useCallback((song, queue = null, index = 0) => {
         setCurrentSong(song);
@@ -97,19 +115,17 @@ export const PlayerProvider = ({ children }) => {
             try {
                 // If we have a saved resume position, seek to it
                 if (resumePositionRef.current > 0) {
-                    console.log('Resuming to position:', resumePositionRef.current);
                     await playerRef.current.seekTo(resumePositionRef.current, true);
                     resumePositionRef.current = 0; // Clear after use
                 } else {
                     // For new songs, seek to 0 to kickstart playback
-                    console.log('Starting new song from beginning');
                     await playerRef.current.seekTo(0, true);
                 }
 
                 const d = await playerRef.current.getDuration();
                 if (d) setDuration(d);
             } catch (e) {
-                console.log("Global Player Ready Error:", e);
+                // Silent error
             }
         }
     }, []);
@@ -119,7 +135,6 @@ export const PlayerProvider = ({ children }) => {
         if (playing) {
             // Pausing - save current position
             resumePositionRef.current = currentTime;
-            console.log('Pausing at:', currentTime);
         }
         setPlaying(prev => !prev);
     }, [playing, currentTime]);
