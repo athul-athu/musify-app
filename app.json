@@ -4,9 +4,9 @@
     "slug": "musify",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.jpeg",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -28,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.jpeg",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.musify.app",
